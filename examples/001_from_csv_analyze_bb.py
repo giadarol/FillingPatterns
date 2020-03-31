@@ -63,4 +63,20 @@ for ib, beam in zip([1, 2], [patt.b1, patt.b2]):
 
     fig1.savefig(fname.split('.csv')[0] + f"_{beam.beam_name.replace(' ', '')}_bb_summary.png", dpi=200)
 
+    # Additional computation for rogelio
+    bbs['collides in ATLAS/CMS/LHCB'] = bbs['collides in ATLAS/CMS'] & bbs['collides in LHCB']
+    bbs['collides in ATLAS/CMS only'] = bbs['collides in ATLAS/CMS'] & (~bbs['collides in LHCB'])
+
+# Additional computatioon for rogelio
+cathegories = ['collides in ATLAS/CMS/LHCB', 'collides in ATLAS/CMS only']
+for bbx, bby in zip([patt.b1, patt.b2], [patt.b2, patt.b1]):
+    bbsx = bbx.bb_schedule
+    bbsy = bby.bb_schedule
+
+    for cc in cathegories:
+        bbsx['main partner '+cc] = False
+        for ibun in bbsx.index:
+            if bbsx.loc[ibun, 'collides in ATLAS/CMS']:
+                bbsx.loc[ibun, 'main partner '+cc] = bbsy.loc[ibun, cc]
+
 plt.show()
