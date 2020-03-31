@@ -1,8 +1,10 @@
+import numpy as np
+
 import fillingpatterns as fp
 
 fname = '25ns_2760b_2748_2492_2574_288bpi_13inj_800ns_bs200ns.csv'
 # fname = '25ns_2744b_2736_2246_2370_240bpi_13inj_800ns_bs200ns_BCMS_5x48b.csv'
-# fname = '8b4e_1972b_1960_1178_1886_224bpi_12inj_800ns_bs200ns.csv'
+fname = '8b4e_1972b_1960_1178_1886_224bpi_12inj_800ns_bs200ns.csv'
 
 # Load filling pattern
 patt = fp.FillingPattern.from_csv(fname)
@@ -63,20 +65,26 @@ for ib, beam in zip([1, 2], [patt.b1, patt.b2]):
 
     fig1.savefig(fname.split('.csv')[0] + f"_{beam.beam_name.replace(' ', '')}_bb_summary.png", dpi=200)
 
-    # Additional computation for rogelio
-    bbs['collides in ATLAS/CMS/LHCB'] = bbs['collides in ATLAS/CMS'] & bbs['collides in LHCB']
-    bbs['collides in ATLAS/CMS only'] = bbs['collides in ATLAS/CMS'] & (~bbs['collides in LHCB'])
 
 # Additional computatioon for rogelio
-cathegories = ['collides in ATLAS/CMS/LHCB', 'collides in ATLAS/CMS only']
 for bbx, bby in zip([patt.b1, patt.b2], [patt.b2, patt.b1]):
     bbsx = bbx.bb_schedule
     bbsy = bby.bb_schedule
 
-    for cc in cathegories:
-        bbsx['main partner '+cc] = False
-        for ibun in bbsx.index:
-            if bbsx.loc[ibun, 'collides in ATLAS/CMS']:
-                bbsx.loc[ibun, 'main partner '+cc] = bbsy.loc[ibun, cc]
+    bbsx['main partner collides in LHCB'] = False
+    for ibun in bbsx.index:
+        if bbsx.loc[ibun, 'collides in ATLAS/CMS']:
+            bbsx.loc[ibun, 'main partner collides in LHCB'] = bbsy.loc[ibun, 'collides in LHCB']
+
+    bbx.LHCB_table = np.zeros((2, 2), dtype=np.int)
+    for ii, me in enumerate([True, False]):
+        for jj, partner in enumerate([True, False]):
+            bbx.LHCB_table[ii, jj] = np.sum((bbsx['collides in LHCB'] == me)
+                                        & (bbsx['main partner collides in LHCB'] == partner))
+
+print('LHCB_table b1:')
+print(repr(patt.b1.LHCB_table))
+print('LHCB_table b2:')
+print(repr(patt.b2.LHCB_table))
 
 plt.show()
